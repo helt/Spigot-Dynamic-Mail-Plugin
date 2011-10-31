@@ -7,3 +7,4 @@
 *.class
 nbproject/private/*
 build/depcache/*
+/build/
