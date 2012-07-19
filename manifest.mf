@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-OpenIDE-Module: ltde.gephi.io.spigot.plugin.email/3
-OpenIDE-Module-Implementation-Version: 1.1
+OpenIDE-Module: ltde.gephi.io.spigot.plugin.email
+OpenIDE-Module-Implementation-Version: 1.4
 OpenIDE-Module-Localizing-Bundle: ltde/gephi/io/spigot/plugin/email/Bundle.properties
 

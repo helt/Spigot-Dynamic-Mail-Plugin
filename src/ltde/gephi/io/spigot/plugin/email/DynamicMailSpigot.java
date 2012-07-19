@@ -36,6 +36,7 @@ import org.gephi.data.attributes.api.AttributeOrigin;
 import org.gephi.data.attributes.api.AttributeRow;
 import org.gephi.data.attributes.api.AttributeType;
 import org.gephi.data.attributes.type.DynamicDouble;
+import org.gephi.data.attributes.type.DynamicFloat;
 import org.gephi.data.attributes.type.Interval;
 import org.gephi.data.properties.PropertiesColumn;
 import org.gephi.io.importer.api.ContainerLoader;
@@ -65,7 +66,7 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
     private boolean hasCcAsWeight;
     private boolean hasBccAsWeight;
     private AttributeColumn dynCol;
-    private HashMap<Pair<NodeDraft, NodeDraft>, DynamicDouble> edgesProto;
+    private HashMap<Pair<NodeDraft, NodeDraft>, DynamicFloat> edgesProto;
     private double HIGH_DATE = 2100d;
     private double LOW_DATE = 1900d;
 
@@ -154,8 +155,8 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
     }
 
     private void log(String string) {
-        report.log(string);
-        logger.info(string);
+//        report.log(string);
+//        logger.info(string);
 //        InputOutput io = IOProvider.getDefault().getIO("Hello", true);
 //        io.getOut().println("Hello from standard out");
 //        io.getErr().println("Hello from standard err");  //this text should appear in red
@@ -168,7 +169,7 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
     }
 
     private void processMessage(MimeMessage m) {
-        progressTicket.progress();
+//        progressTicket.progress();
         Set<NodeDraft> tos = new HashSet<NodeDraft>();
         Set<NodeDraft> froms = new HashSet<NodeDraft>();
         Set<NodeDraft> ccs = new HashSet<NodeDraft>();
@@ -185,8 +186,9 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
             cc = m.getRecipients(RecipientType.CC);
             bcc = m.getRecipients(RecipientType.BCC);
         } catch (MessagingException ex) {
-            Exceptions.printStackTrace(ex);
-            log("exception while getting message details");
+            logger.warning("Exception while extracting MimeMessage information");
+//            Exceptions.printStackTrace(ex);
+//            log("exception while getting message details");
         } finally {
             if (from != null) {
                 for (Address a : from) {
@@ -222,7 +224,7 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
         for (NodeDraft source : froms) {
             for (NodeDraft target : tos) {
                 EdgeDraftGetter edge = (EdgeDraftGetter) getEdge(source, target);
-                insertEvent(edge, date, 1d);
+                insertEvent(edge, date, 1.0f);
 //                Double delta = 5d;
 //                Pair pair = new Pair(source, target);
 //                if (edgesProto.containsKey(pair)) {
@@ -236,7 +238,7 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
             }
             for (NodeDraft target : ccs) {
                 EdgeDraftGetter edge = (EdgeDraftGetter) getEdge(source, target);
-                insertEvent(edge, date, 0.4999d);
+                insertEvent(edge, date, 0.4999f);
 //                Double delta = 1d;
 //                Pair pair = new Pair(source, target);
 //                if (edgesProto.containsKey(pair)) {
@@ -251,7 +253,7 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
             }
             for (NodeDraft target : bccs) {
                 EdgeDraftGetter edge = (EdgeDraftGetter) getEdge(source, target);
-                insertEvent(edge, date, 0.01111d);
+                insertEvent(edge, date, 0.0111f);
 
 //                Double delta = 0.05d;
 //                Pair pair = new Pair(source, target);
@@ -264,8 +266,6 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
 //                }
             }
         }
-
-
     }
 
     private NodeDraft getNode(Address a) {
@@ -294,9 +294,9 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
             edge.setSource(sourceNode);
             edge.setTarget(targetNode);
             AttributeColumn newDynCol = container.getAttributeModel().getEdgeTable().getColumn(PropertiesColumn.EDGE_WEIGHT.getIndex());
-            if (newDynCol == null || newDynCol.getType() != AttributeType.DYNAMIC_DOUBLE) {
+            if (newDynCol == null || newDynCol.getType() != AttributeType.DYNAMIC_FLOAT) {
                 AttributeColumn oldWeight = container.getAttributeModel().getEdgeTable().getColumn(PropertiesColumn.EDGE_WEIGHT.getIndex());
-                newDynCol = container.getAttributeModel().getEdgeTable().replaceColumn(oldWeight, PropertiesColumn.EDGE_WEIGHT.getId(), PropertiesColumn.EDGE_WEIGHT.getTitle(), AttributeType.DYNAMIC_DOUBLE, AttributeOrigin.PROPERTY, null);
+                newDynCol = container.getAttributeModel().getEdgeTable().replaceColumn(oldWeight, PropertiesColumn.EDGE_WEIGHT.getId(), PropertiesColumn.EDGE_WEIGHT.getTitle(), AttributeType.DYNAMIC_FLOAT, AttributeOrigin.PROPERTY, null);
 //                !column.getType().isDynamicType();
             }
 //            edge.addAttributeValue(dynCol, new DynamicDouble(new Interval<Double>(1990d, 2004d, false, false, 0d)));
@@ -309,28 +309,28 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
         return edge;
     }
 
-    private DynamicDouble getTimeline(EdgeDraftGetter edge) {
+    private DynamicFloat getTimeline(EdgeDraftGetter edge) {
         AttributeRow attributeRow = edge.getAttributeRow();
         Object value = attributeRow.getValue(dynCol);
-        DynamicDouble dd;
-        if (value instanceof DynamicDouble) {
-            dd = (DynamicDouble) value;
+        DynamicFloat dd;
+        if (value instanceof DynamicFloat) {
+            dd = (DynamicFloat) value;
         } else {
             dd = null;
         }
         return dd;
     }
 
-    private List<Interval<Double>> splitInterval(Interval<Double> source, Double splitPos, Double delta) {
+    private List<Interval<Float>> splitInterval(Interval<Float> source, Double splitPos, Float delta) {
 //        log("split at "+ splitPos + " : " + source.toString());
-        List<Interval<Double>> result = new ArrayList<Interval<Double>>();
+        List<Interval<Float>> result = new ArrayList<Interval<Float>>();
         if (delta == null) {
             // illegal arguments - dont change anything. only wrap input into a list.
             result.add(source);
             return result;
         }
 
-        Double value = (source.getValue() == null || source.getValue().isNaN() || source.getValue().isInfinite()) ? 0 : source.getValue();
+        Float value = (source.getValue() == null || source.getValue().isNaN() || source.getValue().isInfinite()) ? 0 : source.getValue();
 
 //        // debug:
 //        if (source.getLow() == splitPos) {
@@ -363,14 +363,14 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
             // split happend in the past => only change value
 //            log("split\t<\tlow\t<\thigh");
 //            log("split < low");
-            result.add(new Interval<Double>(source, new Double(value + delta)));
+            result.add(new Interval<Float>(source, new Float(value + delta)));
         } else if (source.getLow() < splitPos && splitPos < source.getHigh()) {
 //            log("low\t<\tsplit\t<\thigh");
 //            log("splitting " + source.getLow() + "-----" + splitPos + "----" + source.getHigh());
 
 
-            Interval<Double> lower = new Interval<Double>(source.getLow(), splitPos, source.isLowExcluded(), true, new Double(value));
-            Interval<Double> upper = new Interval<Double>(splitPos, source.getHigh(), true, source.isHighExcluded(), new Double(value + delta));
+            Interval<Float> lower = new Interval<Float>(source.getLow(), splitPos, source.isLowExcluded(), true, new Float(value));
+            Interval<Float> upper = new Interval<Float>(splitPos, source.getHigh(), false, source.isHighExcluded(), new Float(value + delta));
             result.add(lower);
             result.add(upper);
         } else {
@@ -383,10 +383,10 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
         return result;
     }
 
-    private List<Interval<Double>> getSplittedIntervals(List<Interval<Double>> source, Double splitPos, Double delta) {
+    private List<Interval<Float>> getSplittedIntervals(List<Interval<Float>> source, Double splitPos, Float delta) {
 //        log("source:" + source.size());
-        List<Interval<Double>> result = new ArrayList<Interval<Double>>();
-        for (Interval<Double> i : source) {
+        List<Interval<Float>> result = new ArrayList<Interval<Float>>();
+        for (Interval<Float> i : source) {
             result.addAll(splitInterval(i, splitPos, delta));
         }
 //        log("result:" + result.size());
@@ -403,22 +403,22 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
 
     }
 
-    private DynamicDouble insertEvent(DynamicDouble source, Double date, double d) {
-        source = new DynamicDouble(getSplittedIntervals(source.getIntervals(), date, d));
+    private DynamicFloat insertEvent(DynamicFloat source, Double date, float d) {
+        source = new DynamicFloat(getSplittedIntervals(source.getIntervals(), date, d));
         log(source.toString());
         return source;
     }
 
-    private void insertEvent(EdgeDraftGetter edge, Double date, Double aDouble) {
-        DynamicDouble oldTimeline = getTimeline(edge);
+    private void insertEvent(EdgeDraftGetter edge, Double date, Float aDouble) {
+        DynamicFloat oldTimeline = getTimeline(edge);
         if (oldTimeline == null) {
-            oldTimeline = new DynamicDouble(new Interval<Double>(date, Double.POSITIVE_INFINITY, false, true, new Double(1d)));
+            oldTimeline = new DynamicFloat(new Interval<Float>(date, Float.POSITIVE_INFINITY, false, true, new Float(1d)));
         }
 
 //        log("oldTimeline size:\t" + oldTimeline.getIntervals().size());
-        List<Interval<Double>> templist = getSplittedIntervals(oldTimeline.getIntervals(), date, aDouble);
+        List<Interval<Float>> templist = getSplittedIntervals(oldTimeline.getIntervals(), date, aDouble);
 
-        oldTimeline = new DynamicDouble(templist);
+        oldTimeline = new DynamicFloat(templist);
 //        log("newTimeline:\t" + newTimeline.getIntervals().size() + "\t" + newTimeline.toString());
 
 //
@@ -523,33 +523,42 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
         // make weight column dynamic and accessible
 //        container.getAttributeModel();
 
-//        dynCol = container.getAttributeModel().getEdgeTable().getColumn(PropertiesColumn.EDGE_WEIGHT.getIndex());
-//        if (dynCol == null || dynCol.getType() != AttributeType.DYNAMIC_DOUBLE) {
-//            AttributeColumn oldWeight = container.getAttributeModel().getEdgeTable().getColumn(PropertiesColumn.EDGE_WEIGHT.getIndex());
-//            dynCol = container.getAttributeModel().getEdgeTable().replaceColumn(oldWeight, PropertiesColumn.EDGE_WEIGHT.getId(), PropertiesColumn.EDGE_WEIGHT.getTitle(), AttributeType.DYNAMIC_DOUBLE, AttributeOrigin.PROPERTY, null);
-//        }
+        dynCol = container.getAttributeModel().getEdgeTable().getColumn(PropertiesColumn.EDGE_WEIGHT.getIndex());
+        if (dynCol == null || dynCol.getType() != AttributeType.DYNAMIC_FLOAT) {
+            AttributeColumn oldWeight = container.getAttributeModel().getEdgeTable().getColumn(PropertiesColumn.EDGE_WEIGHT.getIndex());
+            dynCol = container.getAttributeModel().getEdgeTable().replaceColumn(oldWeight, PropertiesColumn.EDGE_WEIGHT.getId(), PropertiesColumn.EDGE_WEIGHT.getTitle(), AttributeType.DYNAMIC_FLOAT, AttributeOrigin.PROPERTY, null);
+        }
 
-        dynCol = container.getAttributeModel().getEdgeTable().addColumn("DynWeightColumnId", "DynWeightColTitle", AttributeType.DYNAMIC_DOUBLE, AttributeOrigin.DATA, null);
+//        dynCol = container.getAttributeModel().getEdgeTable().addColumn("DynWeightColumnId", "DynWeightColTitle", AttributeType.DYNAMIC_DOUBLE, AttributeOrigin.DATA, null);
 
-        edgesProto = new HashMap<Pair<NodeDraft, NodeDraft>, DynamicDouble>();
+        edgesProto = new HashMap<Pair<NodeDraft, NodeDraft>, DynamicFloat>();
 
         progressTicket.progress("Estimating total amount of work to be done. May take a while");
         int totalNumOfEmails = getNumOfLocalEmailFile(files);
 
         progressTicket.switchToDeterminate(totalNumOfEmails);
+        progressTicket.progress("Processing " + totalNumOfEmails + " files");
+
         for (File file : files) {
 //            progressTicket.progress();
             processFile(file);
         }
-        progressTicket.progress("Almost done, adding edges");
+        progressTicket.progress("Collecting garbage");
+        System.gc();
+        
+        progressTicket.progress("Adding edges");
         progressTicket.switchToDeterminate(edgesProto.size());
+        
+        DynamicFloat dynWeight;
+        EdgeDraft ed;
+        Double min, max;
         for (Pair<NodeDraft, NodeDraft> k : edgesProto.keySet()) {
             progressTicket.progress();
             log("adding edge: " + k.key + "\t" + k.element + "\t with " + edgesProto.get(k).getIntervals().size() + " events");
 
 
 //                progressTicket.progress();
-            EdgeDraft ed = container.factory().newEdgeDraft();
+            ed = container.factory().newEdgeDraft();
             ed.setSource(k.key);
             ed.setTarget(k.element);
 ////                AttributeColumn weightColumn = container.getAttributeModel().getEdgeTable().getColumn(PropertiesColumn.EDGE_WEIGHT.getIndex());
@@ -560,11 +569,11 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
 //                newDynCol = container.getAttributeModel().getEdgeTable().replaceColumn(oldWeight, PropertiesColumn.EDGE_WEIGHT.getId(), PropertiesColumn.EDGE_WEIGHT.getTitle(), AttributeType.DYNAMIC_DOUBLE, AttributeOrigin.PROPERTY, null);
 ////                !column.getType().isDynamicType();
 //            }
-            DynamicDouble dynWeight = edgesProto.get(k);
-            Double min = Double.POSITIVE_INFINITY;
-            Double max = Double.NEGATIVE_INFINITY;
-            for (Interval<Double> i : dynWeight.getIntervals()) {
-                if (i.getLow() != Double.NEGATIVE_INFINITY && i.getLow() < min) {
+            dynWeight = edgesProto.get(k);
+            min = Double.POSITIVE_INFINITY;
+            max = Double.NEGATIVE_INFINITY;
+            for (Interval<Float> i : dynWeight.getIntervals()) {
+                if (i.getLow() != Float.NEGATIVE_INFINITY && i.getLow() < min) {
                     min = i.getLow();
                 }
                 if (i.getHigh() != Double.POSITIVE_INFINITY && i.getHigh() > max) {
@@ -830,7 +839,7 @@ public class DynamicMailSpigot implements SpigotImporter, LongTask {
                 progressTicket.progress();
                 MimeMessage message = parseFile(file, report);
                 if (message == null) {
-                    report.log("file " + file.getName() + "can't be parsed");
+                    log("file " + file.getName() + "can't be parsed");
                     return msgs;
                 } else {
                     msgs.add(message);
